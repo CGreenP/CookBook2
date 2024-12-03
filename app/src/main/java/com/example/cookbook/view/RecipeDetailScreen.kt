@@ -1,5 +1,9 @@
 package com.example.cookbook.view
 
+import android.app.Activity
+import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +34,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,7 +60,10 @@ import com.example.cookbook.viewmodel.MainViewModel
 import com.example.cookbook.viewmodel.MainViewModel.UiState
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.FullscreenListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
+import kotlin.or
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -255,26 +263,166 @@ fun RecipeDetailInstructions(meal: Meal) {
         }
         Spacer(modifier = Modifier.height(8.dp))
         Box(modifier = Modifier.padding(8.dp)) {
-            YoutubeScreen(youtubeVideoId = meal.strYoutube.toString().substringAfterLast("v="))
+        YoutubeScreen(youtubeVideoId = meal.strYoutube.toString().substringAfterLast("v="))
         }
     }
 }
 
+//@Composable
+//fun YoutubeScreen(
+//    youtubeVideoId: String,
+//) {
+//    LocalContext.current
+//    LocalLifecycleOwner.current
+//    AndroidView(factory = { context ->
+//        YouTubePlayerView(context).apply {
+//            addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
+//                override fun onReady(youTubePlayer: YouTubePlayer) {
+//                    youtubePlayer.value = youTubePlayer
+//                    youTubePlayer.cueVideo(youtubeVideoId, 0f)
+//                }
+//            })
+//        }
+//    })
+//}
+
+//@Composable
+//fun YoutubeScreen(youtubeVideoId: String) {
+//    val youtubePlayer = remember { mutableStateOf<YouTubePlayer?>(null) }
+//
+//    AndroidView(factory = { context ->
+//        val iFramePlayerOptions = IFramePlayerOptions.Builder()
+//            .controls(1)
+//            .fullscreen(1) // Enable full-screen button
+//            .build()
+//
+//        YouTubePlayerView(context).apply {
+//            enableAutomaticInitialization = false // Disable automatic initialization
+//            initialize(object : AbstractYouTubePlayerListener() {
+//                override fun onReady(youTubePlayer: YouTubePlayer) {
+//                    youtubePlayer.value = youTubePlayer
+//                    youTubePlayer.cueVideo(youtubeVideoId, 0f)
+//                }
+//            }, true, iFramePlayerOptions) // Pass IFramePlayerOptions
+//        }
+//    })
+//}
+
+//@Composable
+//fun YoutubeScreen(youtubeVideoId: String) {
+//    val context = LocalContext.current
+//    var isFullscreen by remember { mutableStateOf(false) }
+//    val youtubePlayer = remember { mutableStateOf<YouTubePlayer?>(null) }
+//    val activity = context as Activity
+//
+//    val youtubePlayerView = YouTubePlayerView(context).apply {
+//        enableAutomaticInitialization = false
+//        val iFramePlayerOptions = IFramePlayerOptions.Builder()
+//            .controls(1)
+//            .fullscreen(1)
+//            .build()
+//
+//        initialize(object : AbstractYouTubePlayerListener() {
+//            override fun onReady(youTubePlayer: YouTubePlayer) {
+//                youtubePlayer.value = youTubePlayer
+//                youTubePlayer.cueVideo(youtubeVideoId, 0f)
+//            }
+//        }, true, iFramePlayerOptions)
+//
+//        addFullscreenListener(object : FullscreenListener {
+//            override fun onEnterFullscreen(fullscreenView: View, exitFullscreen: Function0<Unit>) {
+//                isFullscreen = true
+//            }
+//
+//            override fun onExitFullscreen() {
+//                isFullscreen = false
+//            }
+//        })
+//    }
+//
+//    // Fullscreen container
+//    Box(modifier = Modifier.fillMaxSize()) {
+//        if (isFullscreen) {
+//            AndroidView(
+//                factory = { youtubePlayerView },
+//                modifier = Modifier.fillMaxSize()
+//            )
+//        } else {
+//            AndroidView(
+//                factory = { youtubePlayerView },
+//                modifier = Modifier // Your default modifier
+//            )
+//        }
+//    }
+//
+//    // LaunchedEffect to handle potential configuration changes
+//    LaunchedEffect(isFullscreen) {
+//        // If isFullscreen changes, you might need to trigger recomposition
+//        // or handle other side effects here.
+//    }
+//}
+
 @Composable
-fun YoutubeScreen(
-    youtubeVideoId: String,
-) {
-    LocalContext.current
+fun YoutubeScreen(youtubeVideoId: String) {
+    val context = LocalContext.current
+    var isFullscreen by remember { mutableStateOf(false) }
     val youtubePlayer = remember { mutableStateOf<YouTubePlayer?>(null) }
-    LocalLifecycleOwner.current
-    AndroidView(factory = { context ->
+    val activity = context as Activity
+
+    val youtubePlayerView = remember {
         YouTubePlayerView(context).apply {
-            addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
+            enableAutomaticInitialization = false
+            val iFramePlayerOptions = IFramePlayerOptions.Builder()
+                .controls(1)
+                .fullscreen(1)
+                .build()
+
+            initialize(object : AbstractYouTubePlayerListener() {
                 override fun onReady(youTubePlayer: YouTubePlayer) {
                     youtubePlayer.value = youTubePlayer
                     youTubePlayer.cueVideo(youtubeVideoId, 0f)
                 }
+            }, true, iFramePlayerOptions)
+
+            addFullscreenListener(object : FullscreenListener {
+                override fun onEnterFullscreen(
+                    fullscreenView: View,
+                    exitFullscreen: Function0<Unit>
+                ) {
+                    isFullscreen = true
+
+                    // Hide system UI
+                    activity.window.decorView.systemUiVisibility = (
+                            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                                    or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                                    or View.SYSTEM_UI_FLAG_FULLSCREEN
+                            )
+                }
+
+                override fun onExitFullscreen() {
+                    isFullscreen = false
+
+                    // Show system UI
+                    activity.window.decorView.systemUiVisibility = (
+                            View.SYSTEM_UI_FLAG_VISIBLE
+                            )
+                }
             })
         }
-    })
+    }
+
+    // Directly render the YouTubePlayerView
+    AndroidView(
+        factory = { youtubePlayerView },
+        modifier = Modifier.fillMaxSize() // Or your desired modifier
+    )
+
+    // LaunchedEffect to handle potential configuration changes
+    LaunchedEffect(isFullscreen) {
+        // If isFullscreen changes, you might need to trigger recomposition
+        // or handle other side effects here.
+    }
 }
